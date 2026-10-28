@@ -2,7 +2,6 @@
 name = "epita-rachid-rahme-fintech"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
 authors = [
     { email = "rachid.rahme@epita.fr" }
 ]
