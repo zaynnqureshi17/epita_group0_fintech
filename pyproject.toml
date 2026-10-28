@@ -2,8 +2,10 @@
 name = "epita-rachid-rahme-fintech"
 version = "0.1.0"
 description = "Add your description here"
+readme = "REPORT.md"
 authors = [
-    { email = "rachid.rahme@epita.fr" }
+    { email = "rachid.rahme@epita.fr" },
+    { name = "Muhammad Zain Qureshi (zaynnqureshi17)", email = "muhammad-zain.qureshi@epita.fr" },
 ]
 requires-python = ">=3.14"
 dependencies = [
