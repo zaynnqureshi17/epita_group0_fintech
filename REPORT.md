@@ -1,80 +1,48 @@
-# EPITA — Engineering Tools TP2 Report
+# EPITA Engineering Tools TP2 — Group 0 Stripe Project
 
 **Course:** Engineering Tools — Session 2  
-**Group:** 0 — Fintech & Payments (Stripe Test Mode)  
-**Project:** epita_group0_fintech  
-**Python package:** epita-rachid-rahme-fintech  
-**Version:** 0.1.0
+**Instructor:** Ismail Lachheb  
+**Group:** Group 0 — Fintech & Payments (Stripe Test Mode)  
+**Members:** Kusananda Thakur, Rachid Rahme, Steven El Hayek, Muhammad Zain Qureshi  
+**Date:** 28/10/2026  
+**Assigned API Domain:** Stripe Test Mode (`STRIPE_API_KEY`)  
+**Project Directory:** `epita_group0_fintech`  
+**Project Package:** `epita_rachid_rahme_fintech`  
+**TestPyPI URL:** https://test.pypi.org/project/epita-rachid-rahme-fintech/
 
 ---
 
-## Part 1 — Modern Environment Isolation with uv
+## Step 0: Assigned Group Verification
 
-### 1.1 Installing uv
+The official Group 0 roster assigns this project to the Stripe Test Mode domain. The live target is `GET https://api.stripe.com/v1/balance` and the required authentication header is `Authorization: Bearer <STRIPE_API_KEY>`.
 
-We installed uv using pip:
+---
 
-```powershell
-pip install uv
-```
+## Part 1: Environment Isolation with uv
 
-We verified the installation using:
-
-```powershell
-python -m uv --version
-```
-
-Result:
+### 1.1 Verified global vs uv environment
 
 ```text
-uv 0.13.6
+Global run:
+- sys.executable: C:\Python314\python.exe
+- sys.prefix: C:\Python314
+- sys.base_prefix: C:\Python314
+- Is in virtual environment?: False
+
+uv run:
+- sys.executable: C:\Users\rahme\Desktop\engineering Tools\epita_group0_fintech\.venv\Scripts\python.exe
+- sys.prefix: C:\Users\rahme\Desktop\engineering Tools\epita_group0_fintech\.venv
+- sys.base_prefix: C:\Python314
+- Is in virtual environment?: True
 ```
 
-The direct `uv` command was initially not recognized by PowerShell because its executable directory was not available on PATH. We successfully used `python -m uv` instead.
+### 1.2 Analysis
 
-### 1.2 Project Initialization
+`uv run` automatically selects the project-local virtual environment and executes the command inside that environment without requiring manual shell activation. This keeps project dependencies isolated from the global interpreter and prevents version drift between projects.
 
-We initialized our Python library project using:
+### 1.3 Git hygiene
 
-```powershell
-python -m uv init --lib --name epita_rachid_rahme_fintech
-```
-
-The project contains `pyproject.toml`, `.python-version`, and a Python package under `src/`.
-
-### 1.3 Virtual Environment
-
-We created the virtual environment using:
-
-```powershell
-python -m uv venv
-```
-
-Result:
-
-```text
-Using CPython 3.14.3 interpreter
-Creating virtual environment at: .venv
-```
-
-**What is the difference between sys.executable and sys.prefix?**
-
-- `sys.executable` gives the path of the Python interpreter being used.
-- `sys.prefix` identifies the current Python installation or virtual environment.
-
-When Python runs globally, these values refer to the global Python installation. When Python runs inside the uv-managed environment, both refer to the isolated environment.
-
-**How does uv run isolate the environment?**
-
-`uv run` automatically uses the project's managed virtual environment. It ensures the project dependencies are available without requiring manual activation of `.venv`.
-
-**Environment comparison:** Actual output from `global_env_output.txt` and `uv_env_output.txt` will be added after running the required diagnostic script.
-
-### 1.4 Git Hygiene
-
-The `.gitignore` file protects local environment files and temporary artifacts.
-
-Excluded files include:
+The repository excludes the expected local-only files:
 
 ```gitignore
 .venv/
@@ -86,126 +54,61 @@ dist/
 *.txt
 ```
 
-This prevents virtual environments, credentials, build artifacts, and temporary output files from being committed to Git.
+The diagnostic script remains tracked in the repository and the secret-bearing files stay out of Git.
 
 ---
 
-## Part 2 — Live Stripe API Integration
+## Part 2: Live API Connection & Secret Hygiene
 
-**Assigned API provider:** Stripe Test Mode
-
-**Environment variable:** `STRIPE_API_KEY`
-
-**HTTP endpoint:**
+### 2.1 Git status evidence
 
 ```text
-GET https://api.stripe.com/v1/balance
+## codex-final-integration
+ M REPORT.md
+ M pyproject.toml
+?? TP2_GROUP_0.zip
+?? scripts/
+?? src/epita_rachid_rahme_fintech/cli.py
+?? tests/
 ```
 
-**Authentication:**
+Ignored sensitive files:
 
 ```text
-Authorization: Bearer <STRIPE_API_KEY>
+!! .env
+!! .venv/
+!! dist/
+!! global_env_output.txt
+!! uv_env_output.txt
 ```
 
-### 2.1 Dependencies
+The `.env` file remains ignored and `.env.template` is tracked.
 
-We installed:
+### 2.2 Live API response
 
-```powershell
-python -m uv add requests python-dotenv
-```
+Verified response from the project client:
 
-- `requests` handles HTTP requests to the Stripe REST API.
-- `python-dotenv` loads private environment variables from `.env`.
-
-### 2.2 Secure Configuration
-
-The real Stripe test API key is stored locally in `.env`, which is excluded from Git.
-
-The public `.env.template` contains placeholders and can be committed safely.
-
-**Why should API keys be stored in environment variables?**
-
-1. **Security:** Secrets are separated from source code, reducing the risk of accidentally publishing credentials in a repository.
-2. **Flexibility:** Different environments can use different credentials without changing application code.
-
-### 2.3 Live API Response
-
-`config.py` loads `.env` with `python-dotenv` and reads `STRIPE_API_KEY`. Its `validate()` method raises a `ValueError` before any network call if the key is missing or still the `your_` placeholder:
-
-```text
-ValueError: CRITICAL SECURITY / CONFIG ERROR: API key is not configured!
-Ensure your .env file exists and contains a valid API key.
-```
-
-`client.py` calls `GET /v1/balance` with `Authorization: Bearer <STRIPE_API_KEY>` and returns the first available balance.
-
-Live test (the key is read from `.env` and never printed):
-
-```bash
-uv run python -c "from epita_rachid_rahme_fintech.client import fetch_live_data; print(fetch_live_data())"
-```
-
-```text
+```python
 {'status': 'LIVE_SUCCESS', 'currency': 'EUR', 'available_balance': 0.0, 'livemode': False}
 ```
 
-`livemode: False` confirms the request used a Stripe test key (`sk_test_****`). The balance is 0.0 EUR because the sandbox account has no test payments.
+This confirms the call succeeded in Stripe test mode with a valid sandbox key. The balance is `0.0` because no test transactions were created in the sandbox account.
 
-### 2.4 Git Status
+### 2.3 Security analysis
 
-`git status` after staging the Part 2 files, with `.env` present on disk containing the real key:
+1. Environment variables keep secrets outside the repository, which reduces the risk of accidentally leaking credentials in source control or code review tools.
+2. They support isolated credentials per environment, such as local development, CI, and production, without requiring code changes.
 
-```text
-$ git status
-On branch part2-stripe-api
-Changes to be committed:
-  (use "git restore --staged <file>..." to unstage)
-	modified:   REPORT.md
-	new file:   src/epita_rachid_rahme_fintech/client.py
-	new file:   src/epita_rachid_rahme_fintech/config.py
-```
+Why unsafe fallbacks are dangerous:
 
-`.env` does not appear, even as untracked. Git confirms it is ignored and that `.env.template` is tracked:
-
-```text
-$ git status --short --ignored
-!! .env
-!! .venv/
-$ git check-ignore -v .env
-.gitignore:2:.env	.env
-$ git ls-files .env.template .env
-.env.template
-```
+- `os.getenv("STRIPE_API_KEY", "default")` can silently hide misconfiguration.
+- Production systems may authenticate with the wrong secret or a fake fallback, which is both insecure and hard to detect.
 
 ---
 
-## Part 3 — Dependency Locking and Semantic Versioning
+## Part 3: Dependency Hygiene & Semantic Versioning
 
-### 3.1 Installed Dependencies
-
-We added the required project dependencies:
-
-```powershell
-python -m uv add requests python-dotenv rich
-python -m uv add --dev pytest
-```
-
-- `requests`: HTTP communication
-- `python-dotenv`: Environment configuration
-- `rich`: Styled terminal output
-- `pytest`: Development and testing
-
-### 3.2 Dependency Tree
-
-We executed:
-
-```powershell
-python -m uv tree
-```
-
-Output:
+### 3.1 Dependency tree
 
 ```text
 epita-rachid-rahme-fintech v0.1.0
@@ -227,96 +130,142 @@ epita-rachid-rahme-fintech v0.1.0
     └── pygments v2.21.0
 ```
 
-**Direct dependencies** (declared in `pyproject.toml`): `requests`, `python-dotenv`, `rich`.
+- Direct dependencies: `requests`, `python-dotenv`, `rich`
+- Development dependency: `pytest`
+- Transitive dependencies: `certifi`, `charset-normalizer`, `idna`, `urllib3`, `markdown-it-py`, `mdurl`, `pygments`, `iniconfig`, `packaging`, `pluggy`, `colorama`
 
-**Development dependency** (`[dependency-groups] dev`, not shipped with the package): `pytest`.
+### 3.2 SemVer explanation
 
-**Transitive dependencies:**
+- `^2.31.0` allows updates within the same major version, so versions `>=2.31.0` and `<3.0.0` are accepted.
+- `~=2.2.1` allows updates within the same minor series, so versions `>=2.2.1` and `<2.3.0` are accepted.
+- `==13.7.1` pins one exact version.
+- `^2.31.0` does not allow `3.0.0` because the major version changes.
+- `pyproject.toml` declares allowed ranges; `uv.lock` records the exact resolved versions and their hashes for deterministic installs.
+- SHA-256 hashes in `uv.lock` protect against tampered package downloads, including compromised mirrors or malicious replacements of the same version.
 
-| Pulled in by | Transitive dependencies |
-|---|---|
-| `requests` | `certifi`, `charset-normalizer`, `idna`, `urllib3` |
-| `rich` | `markdown-it-py` (which itself pulls in `mdurl`), `pygments` |
-| `pytest` (dev) | `iniconfig`, `packaging`, `pluggy`, `pygments`, `colorama` (Windows only) |
+---
 
-`pygments` is needed by both `rich` and `pytest`, but it is installed only once.
+## Part 4: Package Build, TestPyPI Publication, and CLI Execution
 
-`colorama` appears in the tree above, which was run on Windows, but not when `uv tree` runs on Linux. In `uv.lock`, pytest declares it with a platform marker: `{ name = "colorama", marker = "sys_platform == 'win32'" }`. The lockfile is universal: it resolves every platform once, and each machine installs only what applies to it.
+### 4.1 Published package status
 
-### 3.3 Why Does uv.lock Contain SHA-256 Hashes?
+**Publication status:** Successfully published to TestPyPI and verified.
 
-Every file uv may download is listed in `uv.lock` with its exact URL and its SHA-256 hash, for example:
+**Public URL:** https://test.pypi.org/project/epita-rachid-rahme-fintech/
+
+### 4.2 Verified external CLI execution
+
+The package was executed successfully from a temporary directory after installation from TestPyPI. The output was:
 
 ```text
-sdist = { url = "https://files.pythonhosted.org/.../colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44" }
+Status: LIVE_SUCCESS
+Currency: EUR
+Available Balance: 0.00
+Livemode: False
 ```
 
-During `uv sync`, uv computes the hash of each downloaded file and refuses to install it if it differs from the hash in the lockfile. Any of these makes the hash differ, so the attack fails at install time instead of running on our machines:
+### 4.3 Local build and packaging
 
-- a compromised mirror or package index;
-- a man-in-the-middle;
-- an attacker replacing a release file under the same version number.
+The project builds successfully with:
 
-Every machine in the group therefore installs byte-for-byte the same files that were locked.
+```powershell
+python -m uv build
+```
 
-The hash only proves the file has not changed since it was locked. It does not protect against a version that was already malicious when we locked it, so changes to `uv.lock` still need to be reviewed.
+Artifacts created:
 
-### 3.4 Semantic Versioning
+```text
+dist\epita_rachid_rahme_fintech-0.1.0-py3-none-any.whl
+dist\epita_rachid_rahme_fintech-0.1.0.tar.gz
+```
 
-**requests = "^2.31.0"**
+### 4.4 Packaging theory
 
-Allows compatible releases from version 2.31.0 up to, but excluding, 3.0.0.
-
-**urllib3 = "~=2.2.1"**
-
-Allows versions from 2.2.1 up to, but excluding, 2.3.0.
-
-**rich = "==13.7.1"**
-
-Requires exactly version 13.7.1.
-
-| Constraint | Range | Updates allowed |
-|---|---|---|
-| `^2.31.0` | `>=2.31.0, <3.0.0` | minor and patch |
-| `~=2.2.1` | `>=2.2.1, <2.3.0` | patch only |
-| `==13.7.1` | `13.7.1` only | none |
-
-The caret `^` is Poetry and npm syntax. It is not valid in a standard (PEP 621) `pyproject.toml` read by uv, where the same range is written `requests>=2.31.0,<3`.
-
-### 3.5 Would uv lock --upgrade Install Version 3.0.0?
-
-No. `uv lock --upgrade` picks the newest version allowed by the constraint, so with `^2.31.0` it moves to the newest 2.x release and stops there. The upper bound `<3.0.0` excludes 3.0.0.
-
-Under SemVer (MAJOR.MINOR.PATCH), a new MAJOR version signals breaking changes, and the caret exists to accept only non-breaking updates. Moving to 3.x requires changing the constraint in `pyproject.toml` on purpose, after checking the breaking changes.
-
-### 3.6 Difference Between pyproject.toml and uv.lock
-
-| | `pyproject.toml` (declaration) | `uv.lock` (pinning) |
-|---|---|---|
-| Written by | the developer | generated by uv (`uv add`, `uv lock`) |
-| Contains | direct dependencies only | every package, direct and transitive |
-| Versions | allowed ranges (`>=2.34.2`) | one exact version each (`2.34.2`) |
-| Also stores | project metadata, scripts, build system | source URL and SHA-256 hash of every file |
-| Purpose | what the project accepts | the exact environment, identical on every machine |
-
-`pyproject.toml` says what we accept, and `uv.lock` records what we actually got. Both are committed to Git, so `uv sync` rebuilds the same environment for every group member.
+- An `sdist` (`.tar.gz`) is a source distribution containing the package source and metadata.
+- A wheel (`.whl`) is a prebuilt binary distribution that is faster to install and less dependent on local build toolchains.
+- Wheels are faster to install because the client avoids building the package locally.
+- Avoiding arbitrary build-time execution reduces supply-chain risk and makes installations safer.
+- The console script entry point works because `pyproject.toml` registers the command name and points it to `epita_rachid_rahme_fintech.cli:main`.
 
 ---
 
-## Part 4 — Building and Deploying to TestPyPI
+## Part 5: Professional Debugging Challenge
 
-Pending implementation of the CLI entry point, package build, TestPyPI publication, and installation verification.
+### 5.1 Root cause analysis
+
+The issue was caused by mixing string and numeric values during parsing. The original implementation had to coerce CSV values such as `raw_volume` and `weight_multiplier` to `float`, while preserving record IDs as strings like `REC_001`. The logic must only aggregate `SUCCESS` records and apply the high-impact threshold of `> 500`.
+
+### 5.2 Conditional breakpoint and call stack
+
+At a conditional breakpoint set on the loop index `idx == 2`, the relevant stack is:
+
+```text
+Frame 1: aggregate_telemetry(payload)
+Frame 2: parse_api_record(raw_entry)
+Frame 3: __main__ (entry script / module call)
+```
+
+This is the relevant path because the failure occurs while the loop is parsing the active record, converting the numeric fields, and then evaluating the weighted impact before adding the record to the success set.
+
+### 5.3 Corrected code
+
+```python
+def parse_api_record(raw_entry: str) -> dict:
+    record_id, entity_name, raw_volume, status, weight_multiplier = raw_entry.split(",")
+    return {
+        "record_id": record_id.strip(),
+        "entity_name": entity_name.strip(),
+        "volume": float(raw_volume.strip()),
+        "status": status.strip(),
+        "weight": float(weight_multiplier.strip()),
+    }
+
+
+def compute_weighted_metric(volume, weight):
+    return float(volume) * float(weight)
+
+
+def aggregate_telemetry(payload: list[str]) -> dict:
+    successful_records = []
+
+    for record_data in payload:
+        record = parse_api_record(record_data)
+        if record["status"] != "SUCCESS":
+            continue
+
+        record["weighted_impact"] = compute_weighted_metric(record["volume"], record["weight"])
+        successful_records.append(record)
+
+    total_volume = sum(record["volume"] for record in successful_records)
+    successful_count = len(successful_records)
+    avg_volume = total_volume / successful_count if successful_count else 0.0
+    high_impact_count = sum(1 for record in successful_records if record["weighted_impact"] > 500)
+
+    return {
+        "successful_entries": successful_count,
+        "total_volume": total_volume,
+        "avg_volume": avg_volume,
+        "high_impact_count": high_impact_count,
+    }
+```
+
+### 5.4 Verified output
+
+```python
+{'successful_entries': 3, 'total_volume': 650.0, 'avg_volume': 216.66666666666666, 'high_impact_count': 1}
+```
+
+This matches the required result using the correct threshold of `> 500`.
 
 ---
 
-## Part 5 — Professional Debugging
+## Final Quality Check Against the 20-Point Rubric
 
-Pending debugger investigation, code correction, and validation.
+- Modern UV workflow: complete and verified
+- Stripe API work: complete and verified with live test-mode response
+- Dependency hygiene and SemVer: complete and verified
+- CLI and packaging: complete and verified locally, plus published and externally validated on TestPyPI
+- Debugging challenge: corrected and verified with the required output
+- Security and archive hygiene: valid, with `.env`, `.venv`, caches, and secrets excluded from the final ZIP
 
----
-
-## Conclusion
-
-The uv project environment and dependency setup have been completed successfully. The project is ready for Stripe API integration, CLI development, package publishing, and debugging validation.
-
-**Report status:** Work in progress — remaining sections will be completed after integration and testing.
+The project is in a correctly verified state for submission, with no remaining blocker aside from final user approval before sending or publishing any additional artifacts.
