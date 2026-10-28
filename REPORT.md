@@ -132,11 +132,52 @@ The public `.env.template` contains placeholders and can be committed safely.
 
 ### 2.3 Live API Response
 
-Pending integration and successful verification of the Stripe API client.
+`config.py` loads `.env` with `python-dotenv` and reads `STRIPE_API_KEY`. Its `validate()` method raises a `ValueError` before any network call if the key is missing or still the `your_` placeholder:
+
+```text
+ValueError: CRITICAL SECURITY / CONFIG ERROR: API key is not configured!
+Ensure your .env file exists and contains a valid API key.
+```
+
+`client.py` calls `GET /v1/balance` with `Authorization: Bearer <STRIPE_API_KEY>` and returns the first available balance.
+
+Live test (the key is read from `.env` and never printed):
+
+```bash
+uv run python -c "from epita_rachid_rahme_fintech.client import fetch_live_data; print(fetch_live_data())"
+```
+
+```text
+{'status': 'LIVE_SUCCESS', 'currency': 'EUR', 'available_balance': 0.0, 'livemode': False}
+```
+
+`livemode: False` confirms the request used a Stripe test key (`sk_test_****`). The balance is 0.0 EUR because the sandbox account has no test payments.
 
 ### 2.4 Git Status
 
-The final Git status and verification that `.env` is ignored will be added after the project files are committed.
+`git status` after staging the Part 2 files, with `.env` present on disk containing the real key:
+
+```text
+$ git status
+On branch part2-stripe-api
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   REPORT.md
+	new file:   src/epita_rachid_rahme_fintech/client.py
+	new file:   src/epita_rachid_rahme_fintech/config.py
+```
+
+`.env` does not appear, even as untracked. Git confirms it is ignored and that `.env.template` is tracked:
+
+```text
+$ git status --short --ignored
+!! .env
+!! .venv/
+$ git check-ignore -v .env
+.gitignore:2:.env	.env
+$ git ls-files .env.template .env
+.env.template
+```
 
 ---
 
