@@ -6,6 +6,8 @@ readme = "REPORT.md"
 authors = [
     { email = "rachid.rahme@epita.fr" },
     { name = "Muhammad Zain Qureshi (zaynnqureshi17)", email = "muhammad-zain.qureshi@epita.fr" },
+    { name = "Steven El Hayek", email = "steven.el-hayek@epita.fr" },
+    { name = "Kusananda Thakur", email = "kusananda.thakur@epita.fr" },
 ]
 requires-python = ">=3.14"
 dependencies = [
